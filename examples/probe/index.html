@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>probe</title>
+<style>
+  body{margin:0;font:16px/1.4 system-ui}
+  #px{width:120px;height:40px;background:#2563eb}
+  #vw{width:10vw;height:10vh;background:#0891b2}
+  #bp1440,#bp1600,#bp60em,#bprange,#cq{height:12px;background:#f59e0b}
+  #bp1440{display:none}#bp1600{display:none}#bp60em{display:none}#bprange{display:none}
+  @media (max-width:1440px){#bp1440{display:block}}
+  @media (min-width:1600px){#bp1600{display:block}}
+  @media (min-width:60em){#bp60em{display:block}}
+  @media (width < 48rem){#bprange{display:block}}
+  #cqbox{container-type:inline-size;width:600px}
+  @container (max-width:500px){#cq{background:red}}
+  #fixed{position:fixed;right:20px;bottom:20px;width:180px;height:40px;background:#172538}
+  #svg{width:24px;height:24px}
+</style></head><body>
+<div id="px">120px</div><div id="vw">10vw</div>
+<div id="bp1440">bp1440</div><div id="bp1600">bp1600</div><div id="bp60em">bp60em</div><div id="bprange">bprange</div>
+<div id="cqbox"><div id="cq">container</div></div>
+<div id="fixed"></div>
+<svg id="svg" width="10vw" height="10vw" viewBox="0 0 24 24"><rect width="24" height="24"/></svg>
+<img id="sizes-img" sizes="100vw" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1' height='1'%3E%3Crect width='1' height='1' fill='red'/%3E%3C/svg%3E" alt="">
+<script type="module">
+  const before = {
+    mq1440: matchMedia('(max-width: 1440px)').matches,
+    innerWidth, clientWidth: document.documentElement.clientWidth,
+    visual: visualViewport?.width, dpr: devicePixelRatio,
+  };
+  window.probeBefore = before;
+  if (new URLSearchParams(location.search).get('mount') !== 'none') {
+    const { mountViewport } = await import('/src/index.ts');
+    window.controller = mountViewport({ designWidth: 1920 });
+    window.probe = () => {
+      const el = s => document.querySelector(s);
+      const box = s => { const r = el(s).getBoundingClientRect(); return { w: r.width, h: r.height }; };
+      return {
+        before,
+        after: { mq1440: matchMedia('(max-width:1440px)').matches, mq1600: matchMedia('(min-width:1600px)').matches, mq60em: matchMedia('(min-width:60em)').matches },
+        innerWidth, clientWidth: document.documentElement.clientWidth, visual: visualViewport?.width, dpr: devicePixelRatio,
+        scrollWidth: document.documentElement.scrollWidth,
+        px: box('#px'), vw: box('#vw'), cq: box('#cq'), fixed: box('#fixed'), svg: box('#svg'),
+        bp: ['#bp1440','#bp1600','#bp60em','#bprange'].map(s => getComputedStyle(el(s)).display),
+        cqColor: getComputedStyle(el('#cq')).backgroundColor,
+        rootZoom: getComputedStyle(document.documentElement).zoom,
+        svw: getComputedStyle(document.documentElement).getPropertyValue('--sv-vw'),
+      };
+    };
+  }
+</script></body></html>

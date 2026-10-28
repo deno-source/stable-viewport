@@ -1,0 +1,100 @@
+{
+  "name": "stable-viewport",
+  "version": "0.1.0",
+  "description": "Lifecycle-safe desktop design viewport for React, Next.js, Vue and custom elements",
+  "type": "module",
+  "sideEffects": [
+    "./dist/auto.js"
+  ],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./react": {
+      "types": "./dist/react.d.ts",
+      "import": "./dist/react.js",
+      "require": "./dist/react.cjs"
+    },
+    "./next": {
+      "types": "./dist/next.d.ts",
+      "import": "./dist/next.js",
+      "require": "./dist/next.cjs"
+    },
+    "./vue": {
+      "types": "./dist/vue.d.ts",
+      "import": "./dist/vue.js",
+      "require": "./dist/vue.cjs"
+    },
+    "./web-component": {
+      "types": "./dist/web-component.d.ts",
+      "import": "./dist/web-component.js",
+      "require": "./dist/web-component.cjs"
+    },
+    "./auto.js": "./dist/auto.js"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "dev": "vite --host 127.0.0.1 --port 4379 --strictPort",
+    "dev:next": "next dev examples/next --port 4380",
+    "test:mutation": "stryker run",
+    "test:duplicates": "jscpd src --threshold 0 --min-lines 8 --min-tokens 60 --reporters console,json --output reports/duplication"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "peerDependencies": {
+    "next": ">=15",
+    "react": ">=18",
+    "react-dom": ">=18",
+    "vue": ">=3.3"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    },
+    "vue": {
+      "optional": true
+    },
+    "next": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "postcss-value-parser": "4.2.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1",
+    "@stryker-mutator/core": "10.1.1",
+    "@stryker-mutator/vitest-runner": "10.1.1",
+    "@types/node": "26.6.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitest/coverage-v8": "5.0.5",
+    "esbuild": "0.28.2",
+    "eslint": "10.13.0",
+    "jscpd": "5.4.2",
+    "next": "16.4.3",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "typescript": "7.0.2",
+    "vite": "8.3.5",
+    "vitest": "5.0.5",
+    "vue": "3.5.44"
+  }
+}

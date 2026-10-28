@@ -1,0 +1,13 @@
+node_modules/
+dist/
+*.tgz
+test-results/
+playwright-report/
+.playwright-cli/
+examples/next/.next/
+reports/
+.stryker-tmp/
+.tools/
+.metrics/
+reports-audit.json
+examples/next/public/stable-viewport.auto.js
