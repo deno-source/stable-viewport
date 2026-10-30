@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Minimum-condition reference page</title>
+<style>
+  html{font-size:16px}
+  body{margin:0;font:16px/1.5 system-ui;background:#f8fafc;color:#0f172a}
+  main{padding:32px 48px;max-width:1200px}
+  .card{width:320px;padding:24px;background:#fff;border-radius:12px;box-shadow:0 1px 3px #0f172a1a}
+  .hero{height:clamp(240px, 40vh, 560px);background:#2563eb;border-radius:16px}
+  .grid{display:grid;grid-template-columns:repeat(3, 1fr);gap:24px}
+  .toast{position:fixed;right:24px;bottom:24px;background:#0f172a;color:#fff;padding:12px 20px;border-radius:999px}
+  #probe-px{width:120px;height:40px;background:#22c55e}
+  @media (max-width: 1200px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 1600px) { .hero { min-height: 60vh; } }
+</style></head>
+<body><main>
+  <div class="grid"><div class="card"><div id="probe-px"></div><p>Hardcoded 120×40 px probe.</p></div><div class="card">Two</div><div class="card">Three</div></div>
+  <div class="hero"></div>
+</main><div class="toast">fixed toast</div>
+</body></html>

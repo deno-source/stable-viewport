@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Compatibility laboratory</title>
+<link rel="stylesheet" href="./compat.css">
+<link rel="stylesheet" href="http://localhost:4379/examples/playground/foreign.css">
+<style>
+  body{margin:0;font:16px/1.5 system-ui;background:#f6f8fb;color:#0f172a}
+  main{padding:24px 40px}
+  .row{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+  .probe{background:#2563eb;height:24px}
+  #p-px{width:120px}
+  #p-rem{width:8rem}
+  #p-em{width:8em}
+  #p-pct{width:50%;max-width:640px}
+  #p-vw{width:10vw;height:10vh}
+  #p-vmin{width:20vmin;height:5vmin}
+  #p-clamp{width:clamp(100px,25vw,600px)}
+  #p-max{width:min(40rem,60vw)}
+  #p-calc{width:calc(30vw + 2rem - 8px)}
+  #p-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;width:100%}
+  #p-grid > div{height:40px;background:#a855f7}
+  #p-abs{position:absolute;left:40px;top:0;width:80px;height:16px;background:#f97316}
+  #p-fixed{position:fixed;right:24px;bottom:24px;width:160px;height:36px;background:#0f172a;color:#fff}
+  #p-sticky{position:sticky;top:0;height:40px;background:#c7d2fe}
+  #p-svg{width:48px;height:48px}
+  #p-icon-font{font-size:24px;line-height:1}
+  #p-image{width:64px;height:64px;object-fit:cover}
+  #p-shadow{width:150px;height:24px;background:#22c55e}
+  #p-cqbox{container-type:inline-size;width:520px;border:1px solid #cbd5e1}
+  #p-cq{height:20px;background:#0ea5e9}
+  @container (max-width:400px){#p-cq{background:#ef4444}}
+  #p-nowrap{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:200px}
+  #p-line{line-height:1.5;font-size:1rem;height:48px}
+  .bp{height:10px;background:#eab308;margin-bottom:6px;display:none}
+  #bp-block-1440{display:none}
+  @media (max-width:1440px){#bp-block-1440{display:block}}
+  @media (min-width:1600px){#bp-min-1600{display:block}}
+  @media (min-width:90rem){#bp-min-90rem{display:block}}
+  @media (max-width:920px) and (min-height:400px){#bp-range{display:block}}
+  @media (min-width:60ch){#bp-ch{display:block}}
+  @media (min-width:40vw){#bp-vw{display:block}}
+  @media print{#bp-print{display:block}}
+  @media (prefers-color-scheme: dark){#bp-dark{display:block}}
+  @media (orientation: landscape){#bp-landscape{display:block}}
+  #bp-print{display:none!important}
+  #portal{position:fixed;inset:0;background:#0f172acc;display:grid;place-items:center;z-index:10}
+  #dialog{width:420px;max-height:60vh;overflow:auto;background:#fff;padding:20px;border-radius:12px}
+  body.dark-by-class #p-px{background:#111}
+</style></head>
+<body><main>
+  <div class="row"><button id="mount">Mount</button><button id="unmount">Unmount</button>
+    <button id="open-modal">Body modal</button><button id="add-owner">Add owner</button><button id="drop-owner">Drop owner</button>
+    <button id="inject-style">Inject style</button><button id="adopt-sheet">Adopt sheet</button><button id="late-shadow">Late shadow</button></div>
+  <div id="framework"></div>
+
+  <section class="row"><div class="probe" id="p-px"></div><div class="probe" id="p-rem"></div><div class="probe" id="p-em"></div>
+    <div class="probe" id="p-pct"></div><div class="probe" id="p-vw"></div><div class="probe" id="p-vmin"></div>
+    <div class="probe" id="p-clamp"></div><div class="probe" id="p-max"></div><div class="probe" id="p-calc"></div></section>
+
+  <section id="p-grid">
+    <div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div>
+  </section>
+
+  <section class="row">
+    <svg id="p-svg" viewBox="0 0 24 24" width="10vw" height="10vw"><circle cx="12" cy="12" r="10" fill="#2563eb"/></svg>
+    <span id="p-icon-font">★</span>
+    <img id="p-image" alt="inline svg" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect width='64' height='64' fill='%23f97316'/%3E%3C/svg%3E">
+    <div id="p-nowrap">A very long single-line label that must clip, not wrap</div>
+    <div id="p-line">Two-line paragraph text with a fixed line-height measured in rem.</div>
+  </section>
+
+  <section id="p-cqbox"><div id="p-cq"></div></section>
+
+  <section>
+    <div class="bp" id="bp-block-1440"></div><div class="bp" id="bp-min-1600"></div><div class="bp" id="bp-min-90rem"></div>
+    <div class="bp" id="bp-range"></div><div class="bp" id="bp-ch"></div><div class="bp" id="bp-vw"></div>
+    <div class="bp" id="bp-dark"></div><div class="bp" id="bp-landscape"></div>
+  </section>
+
+  <section><div id="p-sticky">sticky</div><div style="height:1600px"></div></section>
+  <div id="p-abs"></div>
+  <div id="p-safe"></div>
+</main>
+<div id="p-fixed">fixed bottom-right</div>
+<div id="shadow-host"></div>
+<script type="module" src="./compat.ts"></script>
+</body></html>

@@ -1,7 +1,7 @@
 import { mountViewport, type ViewportController, type ViewportOptions } from '../../src/index';
-import { StableViewport as ReactViewport } from '../../dist/react.js';
-import { StableViewport as VueViewport } from '../../dist/vue.js';
-import { defineStableViewport } from '../../dist/web-component.js';
+import { StableViewport as ReactViewport } from '../../src/react.tsx';
+import { StableViewport as VueViewport } from '../../src/vue.ts';
+import { defineStableViewport } from '../../src/web-component.ts';
 import React from 'react';
 import {createRoot, type Root} from 'react-dom/client';
 import {createApp,h,ref,KeepAlive,defineComponent, type App} from 'vue';

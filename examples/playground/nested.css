@@ -1,0 +1,8 @@
+@import url('./imported.css');
+@layer base {
+  @supports (display: grid) {
+    @media (min-width: 1200px) {
+      #imported-probe { height: 20px; }
+    }
+  }
+}

@@ -1,0 +1,9 @@
+<!doctype html><html><head><style>
+  .card { width: 320px; padding: 24px; }
+  .hero { height: clamp(240px, 40vh, 560px); }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .toast { position: fixed; right: 24px; bottom: 24px; }
+  @media (max-width: 1200px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 1440px) { .hero { height: 60vh; } }
+  @container (max-width: 480px) { .card { padding: 12px; } }
+</style></head><body><div class="grid"><div class="card">a</div></div></body></html>

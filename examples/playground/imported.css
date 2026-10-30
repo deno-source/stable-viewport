@@ -1,0 +1,6 @@
+/* Loaded through @import so the rule walker has to descend into it.
+   Uses px (not vw) so teardown is observable: a fixed pixel keeps its design
+   size inside the canvas and returns to the raw viewport size afterwards. */
+@media (min-width: 1200px) {
+  #imported-probe { width: 300px; height: 20px; background: #9333ea; }
+}

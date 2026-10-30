@@ -1,0 +1,5 @@
+html { zoom: 1.15; }
+body { transform: translateZ(0); }
+.shell { width: 100vw; height: 100vh; position: fixed; }
+@media (min-width: 60ch) { .shell { display: flex; } }
+@media (min-width: 40lh) { .shell { gap: 8px; } }

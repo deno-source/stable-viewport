@@ -1,0 +1,6 @@
+{
+  "name": "hostile-consumer",
+  "private": true,
+  "dependencies": { "react": "^17.2.0", "react-dom": "^17.2.0" },
+  "engines": { "node": ">=16" }
+}

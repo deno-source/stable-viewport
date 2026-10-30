@@ -70,3 +70,31 @@ test('printing restores screen scaling and reduced-motion is left native',async(
   await lab.evaluate(()=>dispatchEvent(new Event('afterprint')));expect(await lab.evaluate(()=>document.documentElement.style.zoom)).toBe('0.2');
   await lab.emulateMedia({reducedMotion:'reduce'});expect(await lab.evaluate(()=>matchMedia('(prefers-reduced-motion:reduce)').matches)).toBe(true);
 });
+
+test('independently bundled adapters share one document session',async({lab,zoom})=>{
+  await lab.goto('/examples/compat/?mode=none');
+  // Two separately built copies (dist/*.js) plus the source build: all three must
+  // join the same registry, so the canvas is never applied twice.
+  const states=await lab.evaluate(async()=>{
+    const bust=`?v=${Date.now()}`;
+    const reactBundle=await import(/* @vite-ignore */ `/dist/react.js${bust}`);
+    const vueBundle=await import(/* @vite-ignore */ `/dist/vue.js${bust}`);
+    const wcBundle=await import(/* @vite-ignore */ `/dist/web-component.js${bust}`);
+    return {react:typeof reactBundle.StableViewport,vue:typeof vueBundle.StableViewport,wc:typeof wcBundle.defineStableViewport};
+  });
+  expect(states).toEqual({react:'function',vue:'object',wc:'function'});
+  await lab.evaluate(async()=>{
+    const {mountViewport}=await import('/src/index.ts');
+    (window as any).first=mountViewport({designWidth:1920});
+    const bundle=await import(/* @vite-ignore */ `/dist/index.js?v=${Date.now()}`);
+    (window as any).second=bundle.mountViewport({designWidth:1920});
+    (window as any).conflict=(()=>{try{bundle.mountViewport({designWidth:1440});return false;}catch{return true;}})();
+  });
+  expect(await lab.evaluate(()=>(window as any).conflict)).toBe(true);
+  await zoom(5);
+  expect((await measure(lab,'#p-px')).width).toBeCloseTo(120,0);
+  await lab.evaluate(()=>(window as any).first.destroy());
+  await active(lab);
+  await lab.evaluate(()=>(window as any).second.destroy());
+  await inactive(lab);
+});
