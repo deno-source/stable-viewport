@@ -1,87 +1,117 @@
-import { normalizeOptions, isMobile, type ViewportOptions, type ViewportState, type Diagnostic, type ViewportController, type NormalizedOptions } from './model';
-import { startRuntime } from './runtime';
-export type { ViewportOptions, ViewportState, Diagnostic, ViewportController } from './model';
+import { normalizeOptions, type Diagnostic, type ViewportController, type ViewportOptions, type ViewportState, type ViewportStatus } from './model';
+import { adoptBootstrapLease, acquire, assertUpdateable, release, type Session } from './session';
+import { checkCapability, findHostConflicts } from './capability';
 
-interface Session { runtime:ReturnType<typeof startRuntime>; width:number; owners:Set<symbol>; diagnostics:Diagnostic[]; callbacks:Map<symbol,ViewportOptions['onDiagnostic']> }
-// Bundled framework entries and multiple package copies share one browser registry.
-const registryKey=Symbol.for('stable-viewport.sessions.v1');
-function registry():WeakMap<Document,Session> {
-  const host=globalThis as typeof globalThis & {[key:symbol]:WeakMap<Document,Session>|undefined};
-  return host[registryKey] ??= new WeakMap<Document,Session>();
-}
+export type { Diagnostic, ViewportController, ViewportOptions, ViewportState, ViewportStatus } from './model';
+export { normalizeOptions, viewportMetrics, isMobile } from './model';
+export { transformMedia, transformValue, hasSizeFeatures, unsupportedMediaUnits } from './transforms';
+export { checkCapability, findHostConflicts } from './capability';
 
-function acquire(document:Document, options:NormalizedOptions, owner:symbol):Session {
-  let session=registry().get(document);
-  if(session && session.width!==options.designWidth) throw new Error('Conflicting designWidth for the same document');
-  if(!session){
-    const diagnostics:Diagnostic[]=[];
-    const callbacks=new Map<symbol,ViewportOptions['onDiagnostic']>([[owner,options.onDiagnostic]]);
-    const runtime=startRuntime(document,options,value=>{
-      diagnostics.push(value);
-      for(const callback of callbacks.values()) callback?.(value);
-    });
-    session={runtime,width:options.designWidth,owners:new Set(),diagnostics,callbacks};registry().set(document,session);
-  }
-  session.owners.add(owner);session.callbacks.set(owner,options.onDiagnostic);
-  return session;
-}
-function release(document:Document|undefined, session:Session|undefined, owner:symbol) {
-  if(!document || !session) return;
-  session.owners.delete(owner);session.callbacks.delete(owner);
-  if(session.owners.size) return;
-  session.runtime.destroy();registry().delete(document);
-}
-function availability(options:NormalizedOptions, document:Document|undefined):'disabled'|'unsupported'|undefined {
-  if(!options.enabled) return 'disabled';
-  const window=document?.defaultView;
-  if(!window?.CSS?.supports('zoom','1')) return 'unsupported';
-  if(!options.mobile && isMobile(window)) return 'disabled';
-}
-function hostConflict(document:Document):Diagnostic|undefined {
-  const window=document.defaultView!;
-  const root=window.getComputedStyle(document.documentElement);
-  if(Number(root.zoom)!==1 && root.zoom!=='normal') return {code:'host-root-zoom',message:'Remove existing html zoom before enabling stable-viewport'};
-  for(const element of [document.documentElement,document.body]) {
-    if(element && window.getComputedStyle(element).transform!=='none') return {code:'host-root-transform',message:'html/body transforms change fixed containing blocks; remove them before enabling'};
-  }
+interface Lease {
+  options: ReturnType<typeof normalizeOptions>;
+  session?: Session;
+  status?: ViewportStatus;
+  diagnostics: Diagnostic[];
 }
 
-/** No side effects at import time. One independently disposable lease per call. */
-export function mountViewport(input:ViewportOptions={}):ViewportController {
-  let options=normalizeOptions(input);
-  let document=options.document ?? globalThis.document;
-  const owner=Symbol('stable-viewport-owner');
-  let destroyed=false;
-  let session:Session|undefined;
-  let status:'disabled'|'unsupported'|undefined;
-  let rejected:Diagnostic[]=[];
-  function start() {
-    status=availability(options,document);
-    rejected=[];
-    if(!status && document && !registry().has(document)) {
-      const conflict=hostConflict(document);
-      if(conflict){status='unsupported';rejected=[conflict];options.onDiagnostic?.(conflict);}
-    }
-    if(!status && document) session=acquire(document,options,owner);
+interface Mount {
+  lease: Lease;
+  owner: symbol;
+  document: Document | undefined;
+  destroyed: boolean;
+}
+
+function currentDocument(document: Document | undefined): Document | undefined {
+  return document ?? (typeof globalThis.document === 'undefined' ? undefined : globalThis.document);
+}
+
+/** Capability first, then host conflicts, then the shared session. */
+function installLease(mount: Mount) {
+  const { lease, owner, document } = mount;
+  lease.session = undefined;
+  const capability = checkCapability(document, lease.options);
+  lease.status = capability.status;
+  lease.diagnostics = capability.diagnostics;
+  if (capability.status) {
+    capability.diagnostics.forEach((diagnostic) => lease.options.onDiagnostic?.(diagnostic));
+    return;
   }
-  start();
-  // Hand a pre-hydration auto bootstrap lease to the first explicit controller.
-  const bootstrapKey=Symbol.for('stable-viewport.auto.v1');
-  const bootstrapWindow:(Window & {[bootstrapKey]?:ViewportController})|null|undefined=document?.defaultView;
-  const bootstrap=bootstrapWindow?.[bootstrapKey];
-  if(session && bootstrap && bootstrapWindow){bootstrap.destroy();delete bootstrapWindow[bootstrapKey];}
+  const conflicts = document ? findHostConflicts(document, lease.options) : [];
+  if (conflicts.length) {
+    lease.status = 'unsupported';
+    lease.diagnostics = conflicts;
+    conflicts.forEach((diagnostic) => lease.options.onDiagnostic?.(diagnostic));
+    return;
+  }
+  if (document) lease.session = acquire(document, lease.options, owner);
+}
+
+function readState({ lease, destroyed }: Mount): ViewportState {
   return {
-    refresh:()=>{if(!destroyed) session?.runtime.refresh();},
-    getState:()=>({status:destroyed?'destroyed':status??'active',scale:session?.runtime.state().scale??1,designWidth:options.designWidth,diagnostics:session?.diagnostics.slice()??rejected.slice()}),
-    update:patch=>{
-      if(destroyed) throw new Error('Cannot update a destroyed viewport controller');
-      const next=normalizeOptions({...options,...patch});
-      const nextDocument=next.document ?? globalThis.document;
-      const other=nextDocument && registry().get(nextDocument);
-      const otherOwners=other ? other.owners.size-(other.owners.has(owner)?1:0):0;
-      if(next.enabled && otherOwners>0 && other?.width!==next.designWidth) throw new Error('Conflicting designWidth for the same document');
-      release(document,session,owner);session=undefined;options=next;document=nextDocument;start();
+    status: destroyed ? 'destroyed' : lease.status ?? 'active',
+    scale: lease.session?.runtime?.state().scale ?? 1,
+    designWidth: lease.options.designWidth,
+    diagnostics: lease.session ? lease.session.diagnostics.slice() : lease.diagnostics.slice(),
+  };
+}
+
+/** The fields that decide layout, document ownership and whether we install at all. */
+function layoutChanged(previous: ReturnType<typeof normalizeOptions>, next: ReturnType<typeof normalizeOptions>, document: Document | undefined, previousDocument: Document | undefined): boolean {
+  return previous.designWidth !== next.designWidth ||
+    previous.enabled !== next.enabled ||
+    previous.mobile !== next.mobile ||
+    document !== previousDocument;
+}
+
+/** Validates the next options completely before touching the live document. */
+function updateLease(mount: Mount, patch: Partial<ViewportOptions>) {
+  const next = normalizeOptions({ ...mount.lease.options, ...patch });
+  const nextDocument = currentDocument(next.document);
+  assertUpdateable(nextDocument, mount.owner, next.designWidth);
+  if (!layoutChanged(mount.lease.options, next, nextDocument, mount.document)) {
+    // Nothing that affects layout or ownership moved: only re-register callbacks.
+    mount.lease.options = next;
+    mount.lease.session?.callbacks.set(mount.owner, next.onDiagnostic);
+    return;
+  }
+  release(mount.document, mount.lease.session, mount.owner);
+  mount.lease.options = next;
+  mount.document = nextDocument;
+  installLease(mount);
+}
+
+function destroyLease(mount: Mount) {
+  if (mount.destroyed) return;
+  mount.destroyed = true;
+  release(mount.document, mount.lease.session, mount.owner);
+  mount.lease.session = undefined;
+  mount.lease.status = 'destroyed';
+}
+
+/**
+ * Per-call lease. No side effects at import time; every call is independently
+ * disposable, and `destroy` is idempotent.
+ */
+export function mountViewport(input: ViewportOptions = {}): ViewportController {
+  const mount: Mount = {
+    lease: { options: normalizeOptions(input), diagnostics: [] },
+    owner: Symbol('stable-viewport-owner'),
+    document: undefined,
+    destroyed: false,
+  };
+  mount.document = currentDocument(mount.lease.options.document);
+  installLease(mount);
+  if (mount.lease.session) adoptBootstrapLease(mount.document);
+
+  return {
+    refresh: () => {
+      if (!mount.destroyed) mount.lease.session?.runtime?.refresh();
     },
-    destroy:()=>{if(destroyed) return;destroyed=true;release(document,session,owner);session=undefined;},
+    getState: () => readState(mount),
+    update: (patch) => {
+      if (mount.destroyed) throw new Error('Cannot update a destroyed viewport controller');
+      updateLease(mount, patch);
+    },
+    destroy: () => destroyLease(mount),
   };
 }
