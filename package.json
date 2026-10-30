@@ -8,9 +8,13 @@
   ],
   "files": [
     "dist",
+    "scripts/check.mjs",
     "README.md",
     "LICENSE"
   ],
+  "bin": {
+    "stable-viewport-check": "./scripts/check.mjs"
+  },
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -40,6 +44,16 @@
       "import": "./dist/web-component.js",
       "require": "./dist/web-component.cjs"
     },
+    "./preflight": {
+      "types": "./dist/preflight.d.ts",
+      "import": "./dist/preflight.js",
+      "require": "./dist/preflight.cjs"
+    },
+    "./preflight-browser": {
+      "types": "./dist/preflight-browser.d.ts",
+      "import": "./dist/preflight-browser.js",
+      "require": "./dist/preflight-browser.cjs"
+    },
     "./auto.js": "./dist/auto.js"
   },
   "scripts": {
@@ -47,10 +61,20 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test",
+    "check:self": "node scripts/check.mjs --root . --exclude src/ --exclude e2e/ --exclude examples/ --exclude .tools/ --exclude fixtures/",
     "dev": "vite --host 127.0.0.1 --port 4379 --strictPort",
     "dev:next": "next dev examples/next --port 4380",
-    "test:mutation": "stryker run",
-    "test:duplicates": "jscpd src --threshold 0 --min-lines 8 --min-tokens 60 --reporters console,json --output reports/duplication"
+    "test:e2e:coverage": "playwright test -c playwright.coverage.config.ts",
+    "coverage:e2e": "node scripts/coverage-e2e.mjs",
+    "coverage:unit": "vitest run --coverage",
+    "coverage": "npm run coverage:unit && npm run test:e2e:coverage && npm run coverage:e2e",
+    "quality:crap": "node scripts/quality.mjs crap",
+    "quality:dry": "node scripts/quality.mjs dry",
+    "quality:mutate": "node scripts/quality.mjs mutate",
+    "verify:package": "node scripts/verify-package.mjs",
+    "check": "node scripts/check.mjs",
+    "test:mutation": "node scripts/quality.mjs mutate",
+    "test:duplicates": "node scripts/quality.mjs dry"
   },
   "engines": {
     "node": ">=22"
@@ -79,6 +103,7 @@
     "postcss-value-parser": "4.2.0"
   },
   "devDependencies": {
+    "@jridgewell/trace-mapping": "^0.3.31",
     "@playwright/test": "1.64.1",
     "@stryker-mutator/core": "10.1.1",
     "@stryker-mutator/vitest-runner": "10.1.1",
@@ -88,13 +113,43 @@
     "@vitest/coverage-v8": "5.0.5",
     "esbuild": "0.28.2",
     "eslint": "10.13.0",
+    "istanbul-reports": "^3.2.0",
     "jscpd": "5.4.2",
     "next": "16.4.3",
     "react": "19.3.1",
     "react-dom": "19.3.1",
     "typescript": "7.0.2",
     "vite": "8.3.5",
+    "vite-plugin-istanbul": "^9.0.1",
     "vitest": "5.0.5",
     "vue": "3.5.44"
-  }
+  },
+  "keywords": [
+    "viewport",
+    "design-width",
+    "1920",
+    "zoom",
+    "responsive",
+    "breakpoints",
+    "react",
+    "vue",
+    "nextjs",
+    "web-components",
+    "layout",
+    "ssr",
+    "css-variables",
+    "design-system"
+  ],
+  "license": "MIT",
+  "author": {
+    "name": "stable-viewport contributors"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/deno-source/stable-viewport.git"
+  },
+  "bugs": {
+    "url": "https://github.com/deno-source/stable-viewport/issues"
+  },
+  "homepage": "https://github.com/deno-source/stable-viewport#readme"
 }
