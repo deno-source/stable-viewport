@@ -1,0 +1,55 @@
+name: Bug report
+description: Something renders wrong, breaks layout, or does not restore.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. The most useful thing you can attach is the output of
+        `npx stable-viewport-check --root . --json` — it tells us which minimum
+        condition the project does not meet.
+  - type: textarea
+    id: what-happens
+    attributes:
+      label: What happens
+      description: Expected vs actual, and how visible it is (screenshot welcome).
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Minimal reproduction
+      description: Repo, StackBlitz, or the smallest HTML/CSS that shows it.
+    validations:
+      required: true
+  - type: input
+    id: design-width
+    attributes:
+      label: designWidth
+      placeholder: '1920'
+  - type: input
+    id: zoom
+    attributes:
+      label: Browser zoom levels that show the problem
+      placeholder: '100%, 200%, 500%'
+  - type: dropdown
+    id: adapter
+    attributes:
+      label: Adapter
+      options: [core (mountViewport), React, Next.js, Vue, Web component, auto.js script]
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: stable-viewport, browser and OS, framework version.
+      placeholder: 'stable-viewport 0.1.0 · Chrome 141 · Windows 11 · React 19.1'
+    validations:
+      required: true
+  - type: textarea
+    id: self-check
+    attributes:
+      label: Self check output
+      description: Output of `npx stable-viewport-check --root . --json`
+      render: json

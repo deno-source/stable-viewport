@@ -1,0 +1,100 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# Cancel superseded runs on the same branch.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: verify (node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [22, 24]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - run: npm ci
+
+      - name: Types
+        run: npm run typecheck
+
+      - name: Unit, CLI and SSR tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Install browsers
+        run: npx playwright install --with-deps chromium firefox webkit
+
+      # The zoom suite drives Google Chrome's own page zoom, which needs the
+      # `chrome` channel (preinstalled on GitHub runners).
+      - name: End-to-end (Chromium + Chrome zoom, Firefox, WebKit)
+        run: npm run test:e2e
+        env:
+          SV_BROWSER_CHANNEL: chrome
+
+      - name: Upload traces and report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-node${{ matrix.node }}
+          path: |
+            playwright-report
+            test-results
+          retention-days: 7
+
+  package:
+    name: package contents
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Pack, install into a throwaway project and run the self check
+        run: npm run verify:package
+
+  quality:
+    name: quality gates (ub-mode)
+    runs-on: ubuntu-latest
+    continue-on-error: true # recorded, not blocking; see README for the open CRAP work
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: npm ci
+      - name: Install crapper / dryer / mutator
+        run: node scripts/quality.mjs install
+      - name: Duplication (dryer)
+        run: npm run quality:dry
+      - name: Mutation testing (mutator)
+        run: npm run quality:mutate
+      - name: Coverage for CRAP (unit + browser)
+        run: |
+          npx playwright install --with-deps chromium
+          npm run coverage
+      - name: CRAP (crapper)
+        run: npm run quality:crap

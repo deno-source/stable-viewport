@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Minimum conditions
+    url: https://github.com/deno-source/stable-viewport#minimum-conditions-when-it-will-not-work
+    about: Read this first — a few project conditions cannot be adapted and are refused on purpose.

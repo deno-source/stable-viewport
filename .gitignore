@@ -7,7 +7,11 @@ playwright-report/
 examples/next/.next/
 reports/
 .stryker-tmp/
-.tools/
+coverage/
+coverage-unit/
+.nyc_output/
 .metrics/
-reports-audit.json
+target/
+.tools/venv/
+.tools/src/
 examples/next/public/stable-viewport.auto.js
